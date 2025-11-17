@@ -64,7 +64,7 @@ export const registerUser = async (req, res) => {
     });
   }
 };
-
+// to verify email verification code
 export const verifyCode = async (req, res) => {
   try {
     const { userId, code } = req.body;
