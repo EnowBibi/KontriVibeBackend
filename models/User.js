@@ -33,6 +33,21 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+
+    // NEW
+    verificationCode: {
+      type: String,
+      default: null,
+    },
+    verificationCodeExpires: {
+      type: Date,
+      default: null,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
     preferences: {
       genres: [String],
       moods: [String],
@@ -69,14 +84,6 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
-    createdAt: {
-      type: Date,
-      default: Date.now,
-    },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
   },
   { timestamps: true }
 );

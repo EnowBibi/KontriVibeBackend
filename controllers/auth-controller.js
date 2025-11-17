@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
+import { sendVerificationEmail } from "../utils/mailer.js";
 /*-----------------------------------------------------------------------------------------------------
 | @function registerUser
 | @brief    Registers a new user with profile image, handles both regular users and artists
@@ -20,13 +20,6 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    if (role === "artist" && !stageName) {
-      return res.status(400).json({
-        success: false,
-        message: "Stage name is required for artists",
-      });
-    }
-
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(409).json({
@@ -35,45 +28,98 @@ export const registerUser = async (req, res) => {
       });
     }
 
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters",
-      });
-    }
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new User({
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+    const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    const user = new User({
       fullName: fullName.trim(),
       email: email.toLowerCase().trim(),
       password: hashedPassword,
       role: role || "user",
       stageName: role === "artist" ? stageName.trim() : null,
-      profileImageUrl: req.file ? req.file.path : null, // optional now
+      profileImage: null,
+      verificationCode,
+      verificationCodeExpires,
     });
 
-    await newUser.save();
+    await user.save();
+
+    await sendVerificationEmail(user.email, verificationCode);
 
     res.status(201).json({
       success: true,
-      message: "User registered successfully",
-      user: {
-        id: newUser._id,
-        fullName: newUser.fullName,
-        email: newUser.email,
-        role: newUser.role,
-        stageName: newUser.stageName,
-        profileImageUrl: newUser.profileImageUrl,
-      },
+      message:
+        "User registered. A verification code has been sent to your email",
+      userId: user._id,
     });
-
-    console.info(`[Registration] User created: ${newUser.email}`);
   } catch (error) {
-    console.error("[Registration Error]", error.message);
+    console.error("Registration Error", error);
     res.status(500).json({
       success: false,
       message: "Failed to register user",
+    });
+  }
+};
+
+export const verifyCode = async (req, res) => {
+  try {
+    const { userId, code } = req.body;
+
+    if (!userId || !code) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID and verification code are required",
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "User already verified",
+      });
+    }
+
+    if (user.verificationCode !== code) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid verification code",
+      });
+    }
+
+    if (user.verificationCodeExpires < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification code has expired",
+      });
+    }
+
+    user.isVerified = true;
+    user.verificationCode = null;
+    user.verificationCodeExpires = null;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Account verified successfully",
+    });
+  } catch (error) {
+    console.error("Verify Error", error);
+    res.status(500).json({
+      success: false,
+      message: "Verification failed",
     });
   }
 };
