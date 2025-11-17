@@ -13,3 +13,6 @@ connectToDB().then(() => {
 });
 
 app.use("/api/ai", aiRoutes);
+import aiRoutes from "./routes/aiRoutes.js";
+
+app.use("/api/ai", aiRoutes);
