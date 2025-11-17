@@ -1,6 +1,11 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import multer from "multer";
+import { cloudinary, uploadImage } from "../config/cloudinary.js";
+export const upload = multer({ uploadImage });
+
+
 
 export const registerUser = async (req, res) => {
   try {
@@ -17,6 +22,12 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
+     const profileImageUrl = req.file ? req.file.path : null;
+
+        if (!profileImageUrl) {
+      return res.status(400).json({ message: "Image is required" });
+    }    
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -26,6 +37,8 @@ export const registerUser = async (req, res) => {
       email: email.toLowerCase(),
       password: hashedPassword,
       role: role || "user",
+      profileImageUrl: profileImageUrl
+      
     });
 
     await newUser.save();
@@ -77,4 +90,13 @@ export const loginUser = async (req, res) => {
     console.log("User Login Error:", error);
     res.status(500).json({ message: "Server error during login" });
   }
+};
+
+let tokenBlacklist = [];
+
+export const logoutUser = (req, res) => {
+  const token = req.token; // Provided by authenticate middleware
+  tokenBlacklist.push(token);
+
+  res.json({ message: "Logged out successfully" });
 };
