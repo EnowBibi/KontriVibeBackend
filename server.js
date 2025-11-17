@@ -7,6 +7,7 @@ import authRoutes from "./routes/authRoutes.js";
 
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import webhookRoutes from "./routes/webhookRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -35,3 +36,4 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/webhooks", webhookRoutes);
+app.use("/api/notifications", notificationRoutes);
