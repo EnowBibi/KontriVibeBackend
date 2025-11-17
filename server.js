@@ -1,14 +1,14 @@
 import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import connectToDB from "./config/db.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
-
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import webhookRoutes from "./routes/webhookRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
