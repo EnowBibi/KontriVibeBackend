@@ -3,25 +3,32 @@ import express from "express";
 import cors from "cors";
 import connectToDB from "./config/db.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import authRoutes from "./routes/authRoutes.js"
+
 
 dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-const PORT = 3000;
+// Middleware
 app.use(express.json());
 
-//allow connection from frontend
+// Allow all origins for now (you can restrict later)
 app.use(
   cors({
-    origin: ["http://localhost:5173"], //put actual mobile device ip
+    origin: "*",
     credentials: true,
   })
 );
+
+// Connect DB + Start Server
 connectToDB().then(() => {
   app.listen(PORT, () => {
-    console.log(` Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
   });
 });
 
+// Routes
 app.use("/api/ai", aiRoutes);
+app.use("/api/auth", authRoutes);
