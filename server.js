@@ -3,9 +3,10 @@ import express from "express";
 import cors from "cors";
 import connectToDB from "./config/db.js";
 import aiRoutes from "./routes/aiRoutes.js";
-import authRoutes from "./routes/authRoutes.js"
+import authRoutes from "./routes/authRoutes.js";
 
-
+import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+import webhookRoutes from "./routes/webhookRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -25,10 +26,12 @@ app.use(
 // Connect DB + Start Server
 connectToDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(` Server running on port ${PORT}`);
   });
 });
 
 // Routes
 app.use("/api/ai", aiRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/webhooks", webhookRoutes);
