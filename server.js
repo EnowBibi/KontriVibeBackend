@@ -3,7 +3,8 @@ import express from "express";
 import cors from "cors";
 import connectToDB from "./config/db.js";
 import aiRoutes from "./routes/aiRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
+import authRoutes from "./routes/authRoutes.js"
+
 
 dotenv.config();
 
