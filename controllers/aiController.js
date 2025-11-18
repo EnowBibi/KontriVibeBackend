@@ -5,27 +5,29 @@
 | @return   JSON responses with generated content or error messages
 -----------------------------------------------------------------------------------------------------*/
 
-import openRouter from "../utils/openRouterClient.js";
-import AIContent from "../models/AIContent.js";
 import User from "../models/User.js";
+import AIContent from "../models/AIContent.js";
+import openRouter from "../utils/openRouterClient.js";
 import {
   isLyricsLimitExceeded,
-  isChatbotLimitExceeded,
   incrementLyricsUsage,
-  incrementChatbotUsage,
 } from "../utils/rateLimiter.js";
 
-/**
- * @brief Generate lyrics based on theme, mood, and genre provided by user
- * @param req.body.theme - Theme for lyrics (e.g., "love", "struggle", "hope")
- * @param req.body.mood - Mood (e.g., "upbeat", "melancholic", "energetic")
- * @param req.body.genre - Music genre (e.g., "hip-hop", "afrobeats", "highlife")
- * @return Generated lyrics as JSON or error message
- */
 export async function generateLyrics(req, res) {
   try {
+    console.log("[v0] req.user:", req.user); // debug log to check if req.user exists
+
     const { theme, mood, genre } = req.body;
-    const userId = req.user.id;
+    const userId = req.user?.userId;
+
+    console.log("[v0] userId:", userId); // debug log to verify userId extraction
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Unauthorized",
+        message: "User ID not found in token. Please login again.",
+      });
+    }
 
     if (!theme || !mood || !genre) {
       return res
@@ -65,7 +67,7 @@ Requirements:
 
 Return only the lyrics, formatted clearly with verse and chorus labels.`;
 
-    const response = await openRouter.chat.completions.create({
+    const response = await openRouter.chat.send({
       model: "deepseek/deepseek-chat-v3-0324",
       messages: [
         {
@@ -77,14 +79,22 @@ Return only the lyrics, formatted clearly with verse and chorus labels.`;
 
     const generatedLyrics = response.choices[0].message.content;
 
-    const aiContent = new AIContent({
-      userId,
-      type: "lyrics",
-      inputPrompt: `Theme: ${theme}, Mood: ${mood}, Genre: ${genre}`,
-      outputText: generatedLyrics,
-      tokensUsed: response.usage?.total_tokens || 0,
-    });
-    await aiContent.save();
+    console.log("[v0] AIContent model:", AIContent); // debug log to check if model is defined
+
+    let aiContent;
+    try {
+      aiContent = new AIContent({
+        userId,
+        type: "lyrics",
+        inputPrompt: `Theme: ${theme}, Mood: ${mood}, Genre: ${genre}`,
+        outputText: generatedLyrics,
+        tokensUsed: response.usage?.total_tokens || 0,
+      });
+      await aiContent.save();
+    } catch (saveError) {
+      console.error("[v0] Error saving AIContent:", saveError);
+      // Continue without saving AIContent if it fails
+    }
 
     // Increment usage counter
     await incrementLyricsUsage(userId);
@@ -92,11 +102,12 @@ Return only the lyrics, formatted clearly with verse and chorus labels.`;
     return res.status(200).json({
       success: true,
       lyrics: generatedLyrics,
-      contentId: aiContent._id,
+      contentId: aiContent?._id || null,
       tokensUsed: response.usage?.total_tokens || 0,
     });
   } catch (error) {
     console.error("[v0] Lyric generation error:", error);
+    console.error("[v0] Error stack:", error.stack); // add stack trace for debugging
 
     if (error.status === 429) {
       return res.status(429).json({
@@ -119,7 +130,6 @@ Return only the lyrics, formatted clearly with verse and chorus labels.`;
     });
   }
 }
-
 /**
  * @brief Handle chatbot requests for copyright guidance and music advice
  * @param req.body.message - User question or prompt
@@ -129,7 +139,7 @@ Return only the lyrics, formatted clearly with verse and chorus labels.`;
 export async function chatbotResponse(req, res) {
   try {
     const { message, context } = req.body;
-    const userId = req.user.id;
+    const userId = req.user.userId;
 
     if (!message || message.trim().length === 0) {
       return res.status(400).json({ error: "Message is required" });
@@ -240,7 +250,7 @@ If asked about unrelated topics, politely redirect to music and copyright topics
 export async function getAIContentHistory(req, res) {
   try {
     const { type, limit = 20 } = req.query;
-    const userId = req.user.id;
+    const userId = req.user.userId;
 
     const query = { userId };
     if (type && ["lyrics", "chatbot", "audio"].includes(type)) {
@@ -273,7 +283,7 @@ export async function getAIContentHistory(req, res) {
  */
 export async function getUsageStats(req, res) {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
 
     // Fetch user details
     const user = await User.findById(userId).select("isPremium");
