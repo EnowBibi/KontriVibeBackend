@@ -33,20 +33,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-
-    // NEW
-    verificationCode: {
-      type: String,
-      default: null,
-    },
-    verificationCodeExpires: {
-      type: Date,
-      default: null,
-    },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
+    // Removed: verificationCode, verificationCodeExpires
+    // isVerified is now always true by default
 
     preferences: {
       genres: [String],
