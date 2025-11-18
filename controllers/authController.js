@@ -3,8 +3,8 @@ import Post from "../models/Post.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import multer from "multer";
-import { uploadImage } from "../config/cloudinary.js";
-export const upload = multer({ uploadImage });
+import { uploadPost } from "../config/cloudinary.js";
+export const upload = multer({ uploadPost });
 
 export const registerUser = async (req, res) => {
   try {
@@ -275,5 +275,3 @@ export const createPost = async (req, res) => {
     res.status(500).json({ message: "Server error while creating post" });
   }
 };
-
-//eeehh
