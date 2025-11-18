@@ -4,7 +4,7 @@ import cors from "cors";
 import connectToDB from "./config/db.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import authRoutes from "./routes/authRoutes.js"
-
+import songRoutes from "./routes/songRoutes.js";
 
 dotenv.config();
 
@@ -32,3 +32,4 @@ connectToDB().then(() => {
 // Routes
 app.use("/api/ai", aiRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/songs", songRoutes);
