@@ -95,10 +95,23 @@ export const uploadProfilePicture = async (req, res) => {
       });
     }
 
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profileImage: req.file.path },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "Profile picture updated successfully",
-      profileImageUrl: updatedUser.profileImageUrl,
+      profileImageUrl: updatedUser.profileImage,
     });
   } catch (error) {
     console.error("[Upload Profile Picture Error]", error);
