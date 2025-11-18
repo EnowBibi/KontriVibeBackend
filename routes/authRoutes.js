@@ -15,5 +15,6 @@ router.post(
 );
 router.post("/login", loginUser); // FIXED
 router.post("/logout", logoutUser);
+router.post("/post", uploadImage.single("image"), createPost);
 
 export default router;

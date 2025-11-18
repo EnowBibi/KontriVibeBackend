@@ -1,14 +1,13 @@
 import User from "../models/User.js";
+import Post from "../models/Post.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import multer from "multer";
+import { cloudinary, uploadImage } from "../config/cloudinary.js";
+export const upload = uploadImage;
 
-/*-----------------------------------------------------------------------------------------------------
-| @function registerUser
-| @brief    Registers a new user with profile image, handles both regular users and artists
-| @param    req.body: { fullName, email, password, role, stageName? }
-|           req.file: profile image from multer
-| @return   201 with success message on success, 400/500 on error
------------------------------------------------------------------------------------------------------*/
+
+
 export const registerUser = async (req, res) => {
   try {
     const { fullName, email, password, role, stageName } = req.body;
@@ -216,20 +215,53 @@ export const logoutUser = (req, res) => {
     const token = authHeader.substring(7); // Remove "Bearer " prefix
     tokenBlacklist.push(token);
 
-    res.status(200).json({
-      success: true,
-      message: "Logged out successfully",
-    });
-
-    console.info("[Logout] User logged out");
-  } catch (error) {
-    console.error("[Logout Error]", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Failed to logout",
-    });
-  }
+  res.json({ message: "Logged out successfully" });
 };
 
-// Export tokenBlacklist for middleware to check
-export { tokenBlacklist };
+export const createPost = async (req, res) => {
+  try {
+    console.log("req.body:", req.body);
+    console.log("req.file:", req.file);
+
+    // Destructure with fallback to empty string / default
+    const {
+      content = "",
+      visibility = "public",
+      relatedSongId = null,
+      relatedChallengeId = null,
+      aiGenerated = false,
+    } = req.body;
+
+    if (!content || content.trim() === "") {
+      return res.status(400).json({ message: "Post content is required" });
+    }
+
+    // Multer + Cloudinary stores uploaded file info in req.file
+    const mediaUrl = req.file ? req.file.path : null;
+    const mediaType = req.file ? req.file.mimetype.split("/")[0] : "none"; // image/video/audio
+
+    const newPost = new Post({
+      authorId: req.user?.userId, // from authenticate middleware
+      content,
+      mediaUrl,
+      mediaType,
+      visibility,
+      relatedSongId,
+      relatedChallengeId,
+      aiGenerated,
+      timestamp: new Date(),
+    });
+
+    const savedPost = await newPost.save();
+
+    console.info("Post created successfully");
+
+    res.status(201).json({
+      message: "Post created successfully",
+      post: savedPost,
+    });
+  } catch (error) {
+    console.error("Create Post Error:", error);
+    res.status(500).json({ message: "Server error while creating post" });
+  }
+};
