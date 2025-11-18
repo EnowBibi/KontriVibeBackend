@@ -3,9 +3,10 @@ import {
   registerUser,
   loginUser,
   logoutUser,
-} from "../controllers/auth-controller.js";
+  createPost,
+} from "../controllers/authController.js";
 import { uploadImage } from "../config/cloudinary.js";
-import { uploadProfilePicture } from "../controllers/auth-controller.js";
+import { uploadProfilePicture } from "../controllers/authController.js";
 const router = express.Router();
 router.post("/register", registerUser);
 router.post(
@@ -15,5 +16,6 @@ router.post(
 );
 router.post("/login", loginUser); // FIXED
 router.post("/logout", logoutUser);
+router.post("/post", uploadImage.single("image"), createPost);
 
 export default router;
