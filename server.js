@@ -11,7 +11,6 @@ import likeRoutes from "./routes/likeRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 
 dotenv.config();
-import authRoutes from "./routes/authRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 import webhookRoutes from "./routes/webhookRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
@@ -39,6 +38,9 @@ connectToDB().then(() => {
 // Routes
 app.use("/api/ai", aiRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/songs", songRoutes);
+app.use("/api/likes", likeRoutes);
+app.use("/api/comments", commentRoutes);
 app.use("/api/songs", songRoutes);
 app.use("/api/likes", likeRoutes);
 app.use("/api/comments", commentRoutes);

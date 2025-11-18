@@ -3,10 +3,8 @@ import Post from "../models/Post.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import multer from "multer";
-import { cloudinary, uploadImage } from "../config/cloudinary.js";
-export const upload = uploadImage;
-
-
+import { uploadImage } from "../config/cloudinary.js";
+export const upload = multer({ uploadImage });
 
 export const registerUser = async (req, res) => {
   try {
@@ -150,12 +148,9 @@ export const loginUser = async (req, res) => {
     }
 
     // Compare password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password",
-      });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // Generate JWT token
@@ -215,8 +210,23 @@ export const logoutUser = (req, res) => {
     const token = authHeader.substring(7); // Remove "Bearer " prefix
     tokenBlacklist.push(token);
 
-  res.json({ message: "Logged out successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+
+    console.info("[Logout] User logged out");
+  } catch (error) {
+    console.error("[Logout Error]", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to logout",
+    });
+  }
 };
+
+// Export tokenBlacklist for middleware to check
+export { tokenBlacklist };
 
 export const createPost = async (req, res) => {
   try {
@@ -265,3 +275,5 @@ export const createPost = async (req, res) => {
     res.status(500).json({ message: "Server error while creating post" });
   }
 };
+
+//eeehh
