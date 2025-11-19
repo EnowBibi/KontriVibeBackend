@@ -1,37 +1,39 @@
+// controllers/songController.js
 import Song from "../models/Song.js";
 
-// Upload a new song
 export const uploadSong = async (req, res) => {
   try {
-    const { title, genre, mood, description, durationSec, audioUrl, snippetUrl } = req.body;
-    const artistId = req.user?.userId; // From auth middleware
+    const { title, genre, mood, description, durationSec } = req.body;
+    const artistId = req.user?.userId;
+
+    // Check for files
+    const coverImage = req.files?.["coverImage"]?.[0]?.path || null;
+    const audioUrl = req.files?.["audioFile"]?.[0]?.path || null;
 
     if (!title || !audioUrl || !artistId) {
-      return res.status(400).json({ error: "Title, audioUrl, and artistId are required" });
+      return res
+        .status(400)
+        .json({ error: "Title, audio file, and artistId are required" });
     }
-
-    const coverImage = req.file?.path || null;
 
     const song = new Song({
       artistId,
       title,
       coverImage,
-      audioUrl,
-      snippetUrl,
+      audioUrl, // Cloudinary (or storage) URL from the uploaded file
       genre,
       mood,
       description,
-      durationSec,
+      durationSec: durationSec || 0,
     });
 
     await song.save();
     res.status(201).json({ message: "Song uploaded successfully", song });
   } catch (error) {
-    console.log(error)
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 };
-
 // Get all songs
 export const getAllSongs = async (req, res) => {
   try {
@@ -52,7 +54,12 @@ export const getAllSongs = async (req, res) => {
 
     res.json({
       songs,
-      pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / limit) },
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit),
+      },
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -63,7 +70,10 @@ export const getAllSongs = async (req, res) => {
 export const getSongById = async (req, res) => {
   try {
     const { id } = req.params;
-    const song = await Song.findById(id).populate("artistId", "fullName email profileImageUrl");
+    const song = await Song.findById(id).populate(
+      "artistId",
+      "fullName email profileImageUrl"
+    );
     if (!song) return res.status(404).json({ error: "Song not found" });
     res.json(song);
   } catch (error) {
@@ -79,9 +89,11 @@ export const updateSong = async (req, res) => {
     const song = await Song.findById(id);
 
     if (!song) return res.status(404).json({ error: "Song not found" });
-    if (song.artistId.toString() !== userId) return res.status(403).json({ error: "Unauthorized" });
+    if (song.artistId.toString() !== userId)
+      return res.status(403).json({ error: "Unauthorized" });
 
-    const { title, genre, mood, description, durationSec, snippetUrl } = req.body;
+    const { title, genre, mood, description, durationSec, snippetUrl } =
+      req.body;
 
     if (title) song.title = title;
     if (genre) song.genre = genre;
@@ -106,7 +118,8 @@ export const deleteSong = async (req, res) => {
 
     const song = await Song.findById(id);
     if (!song) return res.status(404).json({ error: "Song not found" });
-    if (song.artistId.toString() !== userId) return res.status(403).json({ error: "Unauthorized" });
+    if (song.artistId.toString() !== userId)
+      return res.status(403).json({ error: "Unauthorized" });
 
     await Song.findByIdAndDelete(id);
     res.json({ message: "Song deleted successfully" });
@@ -119,7 +132,11 @@ export const deleteSong = async (req, res) => {
 export const streamSong = async (req, res) => {
   try {
     const { id } = req.params;
-    const song = await Song.findByIdAndUpdate(id, { $inc: { streamsCount: 1 } }, { new: true });
+    const song = await Song.findByIdAndUpdate(
+      id,
+      { $inc: { streamsCount: 1 } },
+      { new: true }
+    );
     if (!song) return res.status(404).json({ error: "Song not found" });
     res.json({ message: "Stream recorded", streamsCount: song.streamsCount });
   } catch (error) {
@@ -150,7 +167,8 @@ export const getSongsByArtist = async (req, res) => {
 export const searchSongs = async (req, res) => {
   try {
     const { q } = req.query;
-    if (!q) return res.status(400).json({ error: "Query parameter 'q' is required" });
+    if (!q)
+      return res.status(400).json({ error: "Query parameter 'q' is required" });
 
     const songs = await Song.find({ title: { $regex: q, $options: "i" } })
       .populate("artistId", "fullName email profileImageUrl")

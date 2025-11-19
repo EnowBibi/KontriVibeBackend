@@ -1,4 +1,3 @@
-// models/Post.js
 import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
@@ -14,7 +13,7 @@ const postSchema = new Schema(
       type: String,
       required: true,
     },
-    mediaUrl: String, // optional image/video/audio
+    mediaUrl: String,
     mediaType: {
       type: String,
       enum: ["image", "video", "audio", "none"],
@@ -49,7 +48,7 @@ const postSchema = new Schema(
     },
   },
   {
-    timestamps: true, // automatically adds createdAt & updatedAt
+    timestamps: true,
   }
 );
 

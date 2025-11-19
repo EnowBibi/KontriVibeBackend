@@ -9,6 +9,7 @@ import authRoutes from "./routes/authRoutes.js";
 import songRoutes from "./routes/songRoutes.js";
 import likeRoutes from "./routes/likeRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
+import postRoutes from "./routes/postRoutes.js";
 
 dotenv.config();
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
@@ -47,3 +48,4 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 app.use("/api/webhooks", webhookRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/posts", postRoutes);

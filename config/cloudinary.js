@@ -5,7 +5,6 @@ import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 dotenv.config();
 
-// Configure Cloudinary with explicit error checking
 const cloud_name = process.env.CLOUDINARY_CLOUD_NAME;
 const api_key = process.env.CLOUDINARY_API_KEY;
 const api_secret = process.env.CLOUDINARY_API_SECRET;
@@ -24,19 +23,70 @@ cloudinary.v2.config({
   api_secret,
 });
 
-const storage = new CloudinaryStorage({
+const postStorage = new CloudinaryStorage({
+  cloudinary: cloudinary.v2,
+  params: {
+    folder: "kontrivibe/posts",
+    resource_type: "auto",
+    allowed_formats: [
+      "jpg",
+      "jpeg",
+      "png",
+      "gif",
+      "webp",
+      "mp4",
+      "mov",
+      "avi",
+      "mp3",
+      "wav",
+      "m4a",
+    ],
+  },
+});
+
+const profileStorage = new CloudinaryStorage({
   cloudinary: cloudinary.v2,
   params: {
     folder: "kontrivibe/profiles",
-    resource_type: "auto",
+    resource_type: "image",
     allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
   },
 });
 
-export const uploadImage = multer({
-  storage,
+export const uploadPost = multer({
+  storage: postStorage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 100 * 1024 * 1024, // 100MB for videos
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "video/mp4",
+      "video/quicktime",
+      "video/x-msvideo",
+      "audio/mpeg",
+      "audio/wav",
+      "audio/mp4",
+    ];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(
+        new Error(
+          "Invalid file type. Only images (JPG, PNG, GIF, WebP), videos (MP4, MOV, AVI), and audio (MP3, WAV, M4A) are allowed."
+        )
+      );
+    }
+  },
+});
+
+export const uploadProfile = multer({
+  storage: profileStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB for images
   },
   fileFilter: (req, file, cb) => {
     const allowedMimes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
@@ -44,11 +94,12 @@ export const uploadImage = multer({
       cb(null, true);
     } else {
       cb(
-        new Error("Invalid file type. Only JPEG, PNG, GIF, and WebP allowed.")
+        new Error(
+          "Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed."
+        )
       );
     }
   },
 });
 
-// Export Cloudinary instance for direct API calls if needed
 export default cloudinary.v2;
