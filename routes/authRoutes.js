@@ -4,6 +4,7 @@ import {
   loginUser,
   logoutUser,
   createPost,
+  getUser,
 } from "../controllers/authController.js";
 import { uploadPost } from "../config/cloudinary.js";
 import { uploadProfilePicture } from "../controllers/authController.js";
@@ -14,8 +15,8 @@ router.post(
   uploadPost.single("profileImage"),
   uploadProfilePicture
 );
-router.post("/login", loginUser); // FIXED
+router.post("/login", loginUser);
 router.post("/logout", logoutUser);
 router.post("/post", uploadPost.single("image"), createPost);
-
+router.get("/user/:userId", getUser);
 export default router;
