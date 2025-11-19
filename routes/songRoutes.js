@@ -15,14 +15,16 @@ import { checkSongAccess } from "../middlewares/premiumMiddleware.js";
 
 const router = express.Router();
 
-// Song Upload (requires auth)
+// Update the middleware to accept fields
 router.post(
   "/upload",
   authenticate,
-  uploadPost.single("coverImage"),
+  uploadPost.fields([
+    { name: "coverImage", maxCount: 1 },
+    { name: "audioFile", maxCount: 1 },
+  ]),
   uploadSong
 );
-
 // Get all songs (public)
 router.get("/", authenticate, getAllSongs);
 
