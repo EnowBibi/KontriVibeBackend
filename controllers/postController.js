@@ -1,5 +1,6 @@
 import Post from "../models/Post.js";
 import cloudinary from "../config/cloudinary.js";
+import mongoose from "mongoose";
 
 /*-----------------------------------------------------------------------------------------------------
 | @blocktype createPost
@@ -19,7 +20,6 @@ export const createPost = async (req, res) => {
       aiGenerated,
     } = req.body;
 
-    // Validate required fields
     if (!authorId || !content) {
       return res.status(400).json({
         success: false,
@@ -27,40 +27,52 @@ export const createPost = async (req, res) => {
       });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(authorId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid author ID format",
+      });
+    }
+
     let mediaUrl = null;
     let mediaType = "none";
 
     if (req.file) {
-      mediaUrl = req.file.path; // CloudinaryStorage returns the secure URL in the path field
-
-      // Determine media type based on file MIME type
+      mediaUrl = req.file.path;
       const fileType = req.file.mimetype.split("/")[0];
       if (["image", "video", "audio"].includes(fileType)) {
         mediaType = fileType;
       }
     }
 
-    // Create post document
-    const post = new Post({
-      authorId,
+    const postData = {
+      authorId: new mongoose.Types.ObjectId(authorId),
       content,
       mediaUrl,
       mediaType,
       visibility: visibility || "public",
-      relatedSongId: relatedSongId || null,
-      relatedChallengeId: relatedChallengeId || null,
       aiGenerated: aiGenerated || false,
       likesCount: 0,
       commentsCount: 0,
-    });
+    };
 
-    const savedPost = await post.save();
+    if (relatedSongId && mongoose.Types.ObjectId.isValid(relatedSongId)) {
+      postData.relatedSongId = new mongoose.Types.ObjectId(relatedSongId);
+    }
+
+    if (relatedChallengeId && mongoose.Types.ObjectId.isValid(relatedChallengeId)) {
+      postData.relatedChallengeId = new mongoose.Types.ObjectId(relatedChallengeId);
+    }
+
+    // FIXED: create the post properly
+    const savedPost = await Post.create(postData);
 
     res.status(201).json({
       success: true,
       message: "Post created successfully",
       data: savedPost,
     });
+
   } catch (error) {
     console.error("Error creating post:", error);
     res.status(500).json({
@@ -70,6 +82,7 @@ export const createPost = async (req, res) => {
     });
   }
 };
+
 
 /*-----------------------------------------------------------------------------------------------------
 | @blocktype getPostById
